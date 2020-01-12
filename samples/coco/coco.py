@@ -78,7 +78,7 @@ class CocoConfig(Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 1
 
     # Uncomment to train on 8 GPUs (default is 1)
     # GPU_COUNT = 8
@@ -466,26 +466,40 @@ if __name__ == '__main__':
     elif args.model.lower() == "imagenet":
         # Start from ImageNet trained weights
         model_path = model.get_imagenet_weights()
+    elif args.model.lower() == "none":
+        # Find last trained weights
+        model_path = None 
     else:
         model_path = args.model
-
-    # Load weights
+    if model_path==None:
+       print('traing from scratch')
+    # Load weights, comment off load_weights will start training with randomly initialized weights.
     print("Loading weights ", model_path)
-    model.load_weights(model_path, by_name=True)
+    if model_path==None:
+       print('traing from scratch, skip load_weights')
+    else:
+       model.load_weights(model_path, by_name=True)
 
     # Train or evaluate
     if args.command == "train":
         # Training dataset. Use the training set and 35K from the
         # validation set, as as in the Mask RCNN paper.
         dataset_train = CocoDataset()
-        dataset_train.load_coco(args.dataset, "train", year=args.year, auto_download=args.download)
+        dataset_train.load_coco(args.dataset, "train", year=args.year, auto_download=False)
+        #dataset_train.load_coco(args.dataset, "train", year=args.year, auto_download=args.download)
+        print('args.year', args.year)
         if args.year in '2014':
-            dataset_train.load_coco(args.dataset, "valminusminival", year=args.year, auto_download=args.download)
+            print('wang valminusminival')
+            dataset_train.load_coco(args.dataset, "valminusminival", year=args.year, auto_download=False)
+            #dataset_train.load_coco(args.dataset, "valminusminival", year=args.year, auto_download=args.download)
         dataset_train.prepare()
 
         # Validation dataset
         dataset_val = CocoDataset()
         val_type = "val" if args.year in '2017' else "minival"
+
+        print('val_type', val_type)
+        #dataset_val.load_coco(args.dataset, val_type, year=args.year, auto_download=False)
         dataset_val.load_coco(args.dataset, val_type, year=args.year, auto_download=args.download)
         dataset_val.prepare()
 
